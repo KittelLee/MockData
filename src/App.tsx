@@ -12,21 +12,105 @@ function App() {
   const [cameras, setCameras] = useState<Camera[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("http://localhost:3000/camera");
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const data = await response.json();
-        setCameras(data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch("http://localhost:3000/camera");
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data = await response.json();
+      setCameras(data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  const handleAddCamera = async () => {
+    const brand = prompt("카메라 브랜드를 입력하세요:");
+    const title = prompt("카메라 모델명을 입력하세요:");
+    const price = prompt("카메라 가격을 입력하세요:");
+
+    if (brand && title && price) {
+      try {
+        const newCamera: Camera = {
+          id: (cameras.length + 1).toString(),
+          brand,
+          title,
+          price,
+        };
+
+        const response = await fetch("http://localhost:3000/camera", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newCamera),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to add camera");
+        }
+
+        await fetchData();
+      } catch (error) {
+        console.error("Error adding camera:", error);
+      }
+    }
+  };
+
+  const handleUpdateCamera = async (id: string) => {
+    const brand = prompt("새로운 카메라 브랜드를 입력하세요:");
+    const title = prompt("새로운 카메라 모델명을 입력하세요:");
+    const price = prompt("새로운 카메라 가격을 입력하세요:");
+
+    if (brand && title && price) {
+      try {
+        const updatedCamera: Camera = {
+          id,
+          brand,
+          title,
+          price,
+        };
+
+        const response = await fetch(`http://localhost:3000/camera/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedCamera),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update camera");
+        }
+
+        await fetchData();
+      } catch (error) {
+        console.error("Error updating camera:", error);
+      }
+    }
+  };
+
+  const handleDeleteCamera = async (id: string) => {
+    if (window.confirm("정말로 삭제하시겠습니까?")) {
+      try {
+        const response = await fetch(`http://localhost:3000/camera/${id}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to delete camera");
+        }
+
+        await fetchData();
+      } catch (error) {
+        console.error("Error deleting camera:", error);
+      }
+    }
+  };
 
   return (
     <Container>
@@ -35,12 +119,15 @@ function App() {
           <Brand>{camera.brand}</Brand>
           <Title>{camera.title}</Title>
           <Price>{camera.price}</Price>
+          <br />
+          <BtnWrap>
+            <Btn onClick={() => handleUpdateCamera(camera.id)}>수정하기</Btn>
+            <Btn onClick={() => handleDeleteCamera(camera.id)}>삭제하기</Btn>
+          </BtnWrap>
         </Card>
       ))}
       <BtnWrap>
-        <Btn>추가하기</Btn>
-        <Btn>수정하기</Btn>
-        <Btn>삭제하기</Btn>
+        <Btn onClick={handleAddCamera}>추가하기</Btn>
       </BtnWrap>
     </Container>
   );
@@ -54,6 +141,7 @@ const Container = styled.div`
 `;
 
 const Card = styled.div`
+  position: relative;
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 16px;
@@ -82,21 +170,17 @@ const Price = styled.p`
 
 const BtnWrap = styled.div`
   position: absolute;
-  bottom: 50%;
-  right: 10px;
+  bottom: 10px;
+  left: 10px;
 `;
 
 const Btn = styled.button`
   border: none;
   border-radius: 4px;
-  padding: 10px 12px;
-  margin-right: 4px;
+  padding: 8px 12px;
+  margin-top: 4px;
   &:first-child {
     background-color: skyblue;
-    color: white;
-  }
-  &:nth-child(2) {
-    background-color: lightgreen;
     color: white;
   }
   &:last-child {
